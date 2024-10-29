@@ -1,0 +1,27 @@
+HTTrack3.49-2+htsswf+htsjava launched on Tue, 29 Oct 2024 13:19:19 at https://www.mahendrapurbia.com +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar
+(winhttrack -qwC2%Ps2u1%s%uN0%I0p3DaK0H0%kf2A25000%f#f -F "Mozilla/4.5 (compatible; HTTrack 3.0x; Windows 98)" -%F "<!-- Mirrored from %s%s by HTTrack Website Copier/3.x [XR&CO'2014], %s -->" -%l "en, *" https://www.mahendrapurbia.com -O1 "D:\web\rrrr" +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar )
+
+Information, Warnings and Errors reported for this mirror:
+note:	the hts-log.txt file, and hts-cache folder, may contain sensitive information,
+	such as username/password authentication for websites mirrored in this project
+	do not share these files/folders if you want these information to remain private
+
+13:20:05	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/cdn.iframe.ly (from https://www.mahendrapurbia.com/)
+13:20:06	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/polywork-production.imgix.net (from https://www.mahendrapurbia.com/)
+13:20:06	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/polywork-images-proxy.imgix.net (from https://www.mahendrapurbia.com/)
+13:21:04	Warning: 	Retry after error 500 (Internal Server Error) at link https://www.mahendrapurbia.com/product/vertical/tweet-alexandria.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Warning: 	Retry after error 500 (Internal Server Error) at link https://www.mahendrapurbia.com/product/vertical/tweet-michael-friedrich.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Warning: 	Retry after error 500 (Internal Server Error) at link https://www.mahendrapurbia.com/product/vertical/tweet-kurt-temple.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/posts/cdn.iframe.ly (from https://www.mahendrapurbia.com/posts/vke9vEpF)
+13:21:04	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/posts/polywork.com (from https://www.mahendrapurbia.com/posts/vke9vEpF)
+13:21:04	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/posts/polywork-production.imgix.net (from https://www.mahendrapurbia.com/posts/vke9vEpF)
+13:21:04	Error: 	"Not Found" (404) at link https://www.mahendrapurbia.com/posts/polywork-images-proxy.imgix.net (from https://www.mahendrapurbia.com/posts/vke9vEpF)
+13:21:04	Warning: 	Retry after error 500 () at link https://www.mahendrapurbia.com/product/vertical/tweet-alexandria.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Warning: 	Retry after error 500 () at link https://www.mahendrapurbia.com/product/vertical/tweet-michael-friedrich.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Warning: 	Retry after error 500 () at link https://www.mahendrapurbia.com/product/vertical/tweet-kurt-temple.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Error: 	"" (500) after 2 retries at link https://www.mahendrapurbia.com/product/vertical/tweet-alexandria.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Error: 	"" (500) after 2 retries at link https://www.mahendrapurbia.com/product/vertical/tweet-michael-friedrich.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+13:21:04	Error: 	"" (500) after 2 retries at link https://www.mahendrapurbia.com/product/vertical/tweet-kurt-temple.png (from https://www.mahendrapurbia.com/assets/application-8fc5959715f11e200f29e4e7c0987e3c4eb2fa7ac1a2cf931f268a982bdea0a9.css)
+
+HTTrack Website Copier/3.49-2 mirror complete in 1 minutes 45 seconds : 92 links scanned, 75 files written (12266389 bytes overall) [7039596 bytes received at 67043 bytes/sec], 6555378 bytes transferred using HTTP compression in 34 files, ratio 16%, 1.0 requests per connection
+(10 errors, 6 warnings, 0 messages)
