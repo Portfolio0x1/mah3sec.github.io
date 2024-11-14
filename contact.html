@@ -4,29 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Me</title>
+    <style>
+        /* Optional styling for the button */
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function copyEmailAndOpenMail() {
+            // Define your email
+            const email = "mahendrapurbia19@gmail.com";
+            
+            // Copy email to clipboard
+            navigator.clipboard.writeText(email).then(() => {
+                alert("Email copied to clipboard!");
+
+                // Open the default mail client with your email as the recipient
+                window.location.href = `mailto:${email}`;
+            }).catch(err => {
+                console.error("Failed to copy email: ", err);
+                alert("Failed to copy email. Please try again.");
+            });
+        }
+    </script>
 </head>
 <body>
     <h2>Contact Me</h2>
-    <form action="send_form.php" method="post">
-        <label for="name">Your Name:</label>
-        <input type="text" id="name" name="name" required><br><br>
-
-        <label for="email">Your Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
-
-        <label for="reason">Select why you are getting in touch:</label>
-        <select id="reason" name="reason" required>
-            <option value="Producing a Podcast">Producing a Podcast</option>
-            <option value="Interview">Interview</option>
-            <option value="YouTube Collaboration">YouTube Collaboration</option>
-            <option value="Job Offers">Job Offers</option>
-            <option value="Guest Talk">Guest Talk</option>
-        </select><br><br>
-
-        <label for="message">Your Message:</label><br>
-        <textarea id="message" name="message" rows="4" cols="50" required></textarea><br><br>
-
-        <button type="submit">Send Message</button>
-    </form>
+    <button onclick="copyEmailAndOpenMail()">Contact Me</button>
 </body>
 </html>
