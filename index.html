@@ -305,7 +305,23 @@
   </div>
 </div>
     </div>
-      <a data-turbo-frame="_top" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1 tw-absolute lg:tw-relative tw-right-0 z-index-1000" href="contact.html">Contact Me</a>
+     <button onclick="copyEmailAndOpenMail()" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1 tw-absolute lg:tw-relative tw-right-0 z-index-1000">
+    Contact Me
+  <script>
+    function copyEmailAndOpenMail() {
+        const email = "mahendrapurbia19@gmail.com";
+        
+        // Copy email to clipboard
+        navigator.clipboard.writeText(email).then(() => {
+            alert("Email copied to clipboard!");
+            window.location.href = `mailto:${email}`;
+        }).catch(err => {
+            console.error("Failed to copy email: ", err);
+            alert("Failed to copy email. Please try again.");
+        });
+    }
+</script>
+</button>
   </div>
     <div class="identity-header-section-wrapper identity-profile-social-links-section identity-profile-social-links-3059279-section  " >
   <div class="">
