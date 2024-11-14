@@ -284,52 +284,16 @@
     I&#39;m open to
   </div>
 
- <div class="d-flex flex-wrap width-fit-content reveal--RTL-on-trigger reveal--color-EBF3FF" data-controller="badges-list" data-action="resize@window-&gt;badges-list#screenResize" data-badges-list-target="badgesContainer" data-badges-list-max-row-count-value="2" data-badges-list-mobile-max-row-count-value="2" data-badges-list-expanded-value="false" data-badges-list-show-less-value="" data-badges-list-hidden-badge-class="d-none" data-badges-list-overflow-prefix-value="and" data-badges-list-overflow-suffix-value="more." data-badges-list-hide-overflow-count-value="true">
-    <div class='tw-text-template-text font-weight-normal mr-1'>
-        I'm open to
-    </div>
-
-    <!-- Button for "producing a podcast" -->
-    <button onclick="copyEmailAndOpenMail()" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1">
+    <a data-turbo-frame="_top" href="">
+      <div data-badges-list-target="badge">
         <span class="mr-1 tw-text-template-text font-weight-bold bottom-dotted-border-with-hover-pink">producing a podcast,</span>
-    </button>
-
-    <!-- Button for "content creation" -->
-    <button onclick="copyEmailAndOpenMail()" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1">
+</div></a>    <a data-turbo-frame="_top" href="">
+      <div data-badges-list-target="badge">
         <span class="mr-1 tw-text-template-text font-weight-bold bottom-dotted-border-with-hover-lilac">content creation,</span>
-    </button>
-
-    <!-- Button for "appearing in videos" -->
-    <button onclick="copyEmailAndOpenMail()" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1">
+</div></a>    <a data-turbo-frame="_top" href="">
+      <div data-badges-list-target="badge">
         <span class="mr-1 tw-text-template-text font-weight-bold bottom-dotted-border-with-hover-yellow">appearing in videos,</span>
-    </button>
-
-    <!-- Button for "youtube collaborations" -->
-    <button onclick="copyEmailAndOpenMail()" class="btn btn-pill btn-lead border-none btn-lg px-6 tw-bg-template-lead tw-text-template-background hover:tw-bg-template-lead-dark text-nowrap height-fit-content reveal--LTR-on-trigger reveal--color-FFF1F1">
-        <span class="mr-1 tw-text-template-text font-weight-bold bottom-dotted-border-with-hover-red">and youtube collaborations.</span>
-    </button>
-
-    <div class='d-none' data-badges-list-target='overflowBadge' data-action='click->badges-list#toggleDisplayedBadges'>
-        <span class="tw-text-template-text font-weight-bold pointer-cursor" data-badges-list-target='overflowBadgeCount'></span>
-    </div>
-</div>
-
-<!-- Add the JavaScript function -->
-<script>
-    function copyEmailAndOpenMail() {
-        const email = "mahendrapurbia19@gmail.com";
-        
-        // Copy email to clipboard
-        navigator.clipboard.writeText(email).then(() => {
-            alert("Email copied to clipboard!");
-            window.location.href = `mailto:${email}`;
-        }).catch(err => {
-            console.error("Failed to copy email: ", err);
-            alert("Failed to copy email. Please try again.");
-        });
-    }
-</script>
-
+</div></a>    <a data-turbo-frame="_top" href="">
       <div data-badges-list-target="badge">
         <span class="mr-1 tw-text-template-text font-weight-bold bottom-dotted-border-with-hover-red">and youtube collaborations.</span>
 </div></a>
@@ -2046,4 +2010,3 @@ https://polywork-images-proxy.imgix.net/https%3A%2F%2Fpolywork-images-proxy.imgi
 </html>
 <div data-controller="action-on-event" data-action="message-to-event-handler:close-modal@window->action-on-event#closeModal">
 </div>
-
