@@ -344,17 +344,26 @@ function scramble(el, final){
   try { roles = JSON.parse(el.dataset.roles); } catch { return; }
   if(!roles.length) return;
   let idx = 0;
-  setInterval(() => {
-    idx = (idx+1) % roles.length;
+
+  function swap(){
+    idx = (idx + 1) % roles.length;
+    /* fade out */
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
     el.style.opacity = '0';
-    el.style.transform = 'translateY(8px)';
-    el.style.transition = 'opacity .18s, transform .18s';
+    el.style.transform = 'translateY(10px)';
     setTimeout(() => {
+      /* swap text — force gradient repaint by toggling display */
       el.textContent = roles[idx];
+      el.style.display = 'none';
+      void el.offsetHeight; /* reflow */
+      el.style.display = 'inline-block';
+      /* fade in */
       el.style.opacity = '1';
       el.style.transform = 'translateY(0)';
-    }, 200);
-  }, 3000);
+    }, 220);
+  }
+
+  setInterval(swap, 2800);
 })();
 
 /* ── Counter animation ── */
