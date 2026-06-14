@@ -338,7 +338,7 @@ function scramble(el, final){
 
 /* ── Role cycling ── */
 (function(){
-  const el = document.querySelector('.hero__role');
+  const el = document.querySelector('.hero-role');
   if(!el) return;
   let roles;
   try { roles = JSON.parse(el.dataset.roles); } catch { return; }
