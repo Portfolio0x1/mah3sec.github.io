@@ -3,6 +3,201 @@
 const GITHUB_USERNAME = 'Mah3Sec';
 const MEDIUM_USERNAME = 'mah3sec';
 
+/* ═══════════════════════════════════════════════════════
+   PROCEDURAL TOPO CONTOUR MAP
+   Pure JS noise → organic wavy contour lines on canvas
+   ═══════════════════════════════════════════════════════ */
+(function initTopo(){
+  const canvas = document.getElementById('topo-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  /* ── Permutation table (seeded, not random) ── */
+  const P = new Uint8Array(512);
+  const BASE = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,
+    30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,
+    203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,
+    71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,
+    55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,
+    169,200,196,135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,
+    124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,
+    28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,
+    129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,
+    242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,
+    31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,
+    114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+  for(let i=0;i<256;i++) P[i]=P[i+256]=BASE[i];
+
+  function fade(t){ return t*t*t*(t*(t*6-15)+10) }
+  function lerp(a,b,t){ return a+t*(b-a) }
+  function grad(h,x,y){
+    h &= 7;
+    const u = h<4 ? x : y;
+    const v = h<4 ? y : x;
+    return ((h&1)?-u:u) + ((h&2)?-v:v);
+  }
+  function noise2d(x,y){
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    const xf=x-Math.floor(x), yf=y-Math.floor(y);
+    const u=fade(xf), v=fade(yf);
+    const a=P[X]+Y, b=P[X+1]+Y;
+    return lerp(
+      lerp(grad(P[a],xf,yf),   grad(P[b],xf-1,yf),   u),
+      lerp(grad(P[a+1],xf,yf-1),grad(P[b+1],xf-1,yf-1),u),
+      v
+    );
+  }
+
+  /* Fractal Brownian Motion — multiple octaves = more organic */
+  function fbm(x, y, octaves){
+    let v=0, amp=1, freq=1, max=0;
+    for(let i=0;i<octaves;i++){
+      v   += noise2d(x*freq, y*freq) * amp;
+      max += amp;
+      amp  *= 0.5;
+      freq *= 2.1;
+    }
+    return v / max;
+  }
+
+  /* Build height field */
+  let W, H, field, _scrollOffset = 0;
+
+  function buildField(){
+    const STEP = 3; // sample every 3px for performance
+    const cols = Math.ceil(W/STEP)+1;
+    const rows = Math.ceil(H/STEP)+1;
+    field = { cols, rows, STEP, data: new Float32Array(cols*rows) };
+
+    /* Multiple "peaks" — offset noise by several centres */
+    const peaks = [
+      {ox:0.3, oy:0.4, scale:0.9, weight:1.0},
+      {ox:1.4, oy:0.2, scale:0.7, weight:0.75},
+      {ox:0.8, oy:1.1, scale:0.6, weight:0.65},
+      {ox:2.0, oy:0.7, scale:0.5, weight:0.5},
+    ];
+
+    const S = 0.0024; // base spatial scale
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const px = c*STEP, py = r*STEP;
+        let h=0;
+        for(const p of peaks){
+          const nx = px*S*p.scale + p.ox;
+          const ny = py*S*p.scale + p.oy + _scrollOffset;
+          h += fbm(nx, ny, 5) * p.weight;
+        }
+        field.data[r*cols+c] = h;
+      }
+    }
+  }
+
+  /* Marching squares — extract one contour level */
+  function marchLevel(level, lineColor){
+    const {cols, rows, STEP, data} = field;
+    ctx.beginPath();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth   = 0.9;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+
+    function val(r,c){ return data[r*cols+c] - level }
+    function interp(a,b){ return a/(a-b) }
+
+    for(let r=0;r<rows-1;r++){
+      for(let c=0;c<cols-1;c++){
+        const v00=val(r,c), v10=val(r,c+1), v01=val(r+1,c), v11=val(r+1,c+1);
+        const idx=(v00<0?0:8)|(v10<0?0:4)|(v11<0?0:2)|(v01<0?0:1);
+        if(idx===0||idx===15) continue;
+
+        const x0=c*STEP,    y0=r*STEP;
+        const x1=(c+1)*STEP, y1=(r+1)*STEP;
+        /* edge midpoints */
+        const mT={ x:x0+interp(-v00,-v10)*(x1-x0), y:y0 };
+        const mR={ x:x1, y:y0+interp(-v10,-v11)*(y1-y0) };
+        const mB={ x:x0+interp(-v01,-v11)*(x1-x0), y:y1 };
+        const mL={ x:x0, y:y0+interp(-v00,-v01)*(y1-y0) };
+
+        /* lookup table → pairs of edge points */
+        const segs = [
+          [],            // 0
+          [mL,mB],       // 1
+          [mB,mR],       // 2
+          [mL,mR],       // 3
+          [mT,mR],       // 4
+          [mL,mT,mB,mR], // 5 saddle
+          [mT,mB],       // 6
+          [mL,mT],       // 7
+          [mL,mT],       // 8
+          [mT,mB],       // 9
+          [mL,mB,mT,mR], // 10 saddle
+          [mT,mR],       // 11
+          [mL,mR],       // 12
+          [mB,mR],       // 13
+          [mL,mB],       // 14
+          [],            // 15
+        ][idx];
+
+        for(let i=0;i<segs.length;i+=2){
+          ctx.moveTo(segs[i].x,   segs[i].y);
+          ctx.lineTo(segs[i+1].x, segs[i+1].y);
+        }
+      }
+    }
+    ctx.stroke();
+  }
+
+  function draw(scrollY){
+    canvas.width  = W = window.innerWidth;
+    canvas.height = H = window.innerHeight;
+    /* Fill bg — canvas IS the page background */
+    ctx.fillStyle = '#080916';
+    ctx.fillRect(0, 0, W, H);
+
+    /* Shift noise origin by scroll so topo moves with page */
+    _scrollOffset = (scrollY || 0) * 0.00015;
+    buildField();
+
+    /* Find min/max of field for normalisation */
+    let mn=Infinity, mx=-Infinity;
+    for(const v of field.data){ if(v<mn) mn=v; if(v>mx) mx=v; }
+
+    const LEVELS = 22; /* number of contour lines — more = denser */
+    const lineOpacity = 0.07; /* very subtle, like the reference images */
+
+    for(let i=1;i<LEVELS;i++){
+      const t   = i/LEVELS;
+      const lvl = mn + t*(mx-mn);
+      /* slightly thicker every 5th line — index contour */
+      const isMajor = (i % 5 === 0);
+      ctx.globalAlpha = isMajor ? lineOpacity * 1.6 : lineOpacity;
+      ctx.lineWidth   = isMajor ? 1.1 : 0.75;
+      marchLevel(lvl, isMajor ? '#7dd3fc' : '#a78bfa');
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* Draw once on load */
+  draw(0);
+
+  /* Redraw on scroll (throttled with RAF) */
+  let scrollRaf;
+  window.addEventListener('scroll', () => {
+    if(scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      draw(window.scrollY);
+      scrollRaf = null;
+    });
+  }, {passive:true});
+
+  /* Redraw on resize (debounced) */
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => draw(window.scrollY), 250);
+  }, {passive:true});
+})();
+
 const HOF = [
   {name:'Google',domain:'google.com'},{name:'Tesla',domain:'tesla.com'},
   {name:'Mastercard',domain:'mastercard.com'},{name:'Dell',domain:'dell.com'},
@@ -30,23 +225,25 @@ const HOF = [
   {name:'Majid Al Futtaim',domain:'majidalfuttaim.com'},
 ];
 
-/* ── Progress bar ── */
+/* ── Progress bar + trail thread ── */
 (function(){
-  const bar = document.getElementById('progress');
-  if(!bar) return;
-  const u = () => {
-    const t = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.transform = `scaleX(${t ? Math.min(window.scrollY/t,1) : 0})`;
+  const bar    = document.getElementById('progress');
+  const thread = document.getElementById('trail-thread');
+  const update = () => {
+    const t   = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = t ? Math.min(window.scrollY / t, 1) : 0;
+    if(bar)    bar.style.transform = `scaleX(${pct})`;
+    if(thread) thread.style.setProperty('--trail-progress', `${pct * 100}%`);
   };
-  window.addEventListener('scroll', u, {passive:true});
-  u();
+  window.addEventListener('scroll', update, {passive:true});
+  update();
 })();
 
 /* ── Nav: scroll glow + mobile toggle + active links ── */
 (function(){
   const nav    = document.getElementById('mainnav');
   const toggle = document.getElementById('navToggle');
-  const menu   = document.getElementById('navMenu');
+  const menu   = document.getElementById('navLinks');
   if(!nav) return;
 
   window.addEventListener('scroll', () => {
@@ -55,22 +252,20 @@ const HOF = [
 
   if(toggle && menu){
     toggle.addEventListener('click', () => {
-      const open = menu.classList.toggle('is-open');
+      const open = menu.classList.toggle('open');
       toggle.setAttribute('aria-expanded', String(open));
     });
     menu.querySelectorAll('a').forEach(a =>
-      a.addEventListener('click', () => menu.classList.remove('is-open'))
+      a.addEventListener('click', () => menu.classList.remove('open'))
     );
   }
 
-  const sections = Array.from(document.querySelectorAll('.scene[id], .hero[class]'));
-  const navLinks = Array.from(document.querySelectorAll('.nav-menu a[href^="#"]'));
+  const allSections = Array.from(document.querySelectorAll('section[id], header[id]'));
+  const navLinks    = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
   window.addEventListener('scroll', () => {
-    const y = window.scrollY + 80;
-    let active = null;
-    document.querySelectorAll('section[id], header[class="hero scene"]').forEach(s => {
-      if(s.offsetTop <= y) active = s.id || 'top';
-    });
+    const y = window.scrollY + 100;
+    let active = 'top';
+    allSections.forEach(s => { if(s.offsetTop <= y) active = s.id });
     navLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === `#${active}`));
   }, {passive:true});
 })();
@@ -118,7 +313,7 @@ function scramble(el, final){
   document.querySelectorAll('[data-reveal]').forEach(el => obs.observe(el));
 
   // Hero fires immediately on load, staggered
-  document.querySelectorAll('.hero [data-reveal]').forEach((el, i) => {
+  document.querySelectorAll('#hero [data-reveal]').forEach((el, i) => {
     setTimeout(() => {
       el.classList.add('is-visible');
       if(el.dataset.scramble !== undefined) scramble(el, el.dataset.scramble || el.textContent.trim());
@@ -137,7 +332,7 @@ function scramble(el, final){
     });
   }, {threshold:0.15});
   document.querySelectorAll('[data-scramble]').forEach(el => {
-    if(!el.closest('.hero')) scrambleObs.observe(el);
+    if(!el.closest('#hero')) scrambleObs.observe(el);
   });
 })();
 
@@ -152,12 +347,12 @@ function scramble(el, final){
   setInterval(() => {
     idx = (idx+1) % roles.length;
     el.style.opacity = '0';
-    el.style.translate = '0 8px';
-    el.style.transition = 'opacity .18s, translate .18s';
+    el.style.transform = 'translateY(8px)';
+    el.style.transition = 'opacity .18s, transform .18s';
     setTimeout(() => {
       el.textContent = roles[idx];
       el.style.opacity = '1';
-      el.style.translate = '0 0';
+      el.style.transform = 'translateY(0)';
     }, 200);
   }, 3000);
 })();
@@ -233,7 +428,7 @@ applyTilt(document);
 
 /* ── Toggle / collapse ── */
 document.querySelectorAll('.toggle-btn').forEach(btn => {
-  const targetId = btn.dataset.toggle;
+  const targetId = btn.dataset.target;
   const target   = document.querySelector(targetId);
   if(!target) return;
   const labelClosed = btn.dataset.labelClosed || '';
@@ -241,7 +436,7 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
   const labelEl     = btn.querySelector('.toggle-label');
 
   btn.addEventListener('click', () => {
-    const open = target.classList.toggle('is-open');
+    const open = target.classList.toggle('open');
     btn.setAttribute('aria-expanded', String(open));
     if(labelEl) labelEl.textContent = open ? labelOpen : labelClosed;
     // apply tilt to newly revealed cards
@@ -299,7 +494,83 @@ function fmt(s){ try{ return new Date(s).toLocaleDateString('en-US',{month:'shor
 function readTime(h){ const w=strip(h).split(/\s+/).length; const m=Math.ceil(w/200); return m>0?`${m} min read`:'' }
 
 /* ── Init ── */
+/* ═══════════════════════════════════════════════════════
+   ADVENTURE STICKY SCROLL — Google Maps route experience
+   ═══════════════════════════════════════════════════════ */
+function initAdventure(){
+  const outer    = document.querySelector('.adv-sticky-outer');
+  const slides   = document.querySelectorAll('.adv-bg-slide');
+  const contents = document.querySelectorAll('.adv-wp-content');
+  const dots     = document.querySelectorAll('.adv-dot');
+  const progress = document.getElementById('advRouteProgress');
+  const ring     = document.getElementById('advWpRing');
+  const wpDots   = document.querySelectorAll('.adv-wp-dot');
+  if(!outer || !slides.length) return;
+
+  const WP_COUNT = 4;
+  let currentWp = -1;
+
+  /* Waypoint SVG positions (matching viewBox 0 0 100 100) */
+  const WP_COORDS = [
+    {cx:15, cy:85},
+    {cx:50, cy:50},
+    {cx:72, cy:35},
+    {cx:85, cy:20},
+  ];
+
+  /* Total dash length of the route path (approx) */
+  const ROUTE_LEN = 150;
+
+  function goTo(wp){
+    if(wp === currentWp) return;
+    currentWp = wp;
+
+    /* Swap background photo */
+    slides.forEach((s,i) => s.classList.toggle('active', i===wp));
+
+    /* Swap info content */
+    contents.forEach((c,i) => c.classList.toggle('active', i===wp));
+
+    /* Progress dots */
+    dots.forEach((d,i) => d.classList.toggle('active', i===wp));
+
+    /* Move ring to current waypoint */
+    if(ring){
+      const c = WP_COORDS[wp];
+      ring.setAttribute('cx', c.cx);
+      ring.setAttribute('cy', c.cy);
+      ring.classList.add('visible');
+    }
+
+    /* Light up reached dots */
+    wpDots.forEach((d,i) => d.classList.toggle('reached', i<=wp));
+  }
+
+  function onScroll(){
+    const rect    = outer.getBoundingClientRect();
+    const total   = outer.offsetHeight - window.innerHeight;
+    const scrolled = -rect.top;
+    if(scrolled < 0 || scrolled > total + 100) return;
+
+    const pct = Math.max(0, Math.min(1, scrolled / total));
+
+    /* Draw route progress */
+    if(progress){
+      const offset = ROUTE_LEN * (1 - pct);
+      progress.style.strokeDashoffset = offset;
+    }
+
+    /* Which waypoint are we at */
+    const wpIndex = Math.min(WP_COUNT-1, Math.floor(pct * WP_COUNT));
+    goTo(wpIndex);
+  }
+
+  window.addEventListener('scroll', onScroll, {passive:true});
+  goTo(0); /* init */
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   buildHoF();
   fetchMedium();
+  initAdventure();
 });
