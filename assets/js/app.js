@@ -63,8 +63,8 @@ const MEDIUM_USERNAME = 'mah3sec';
   /* Build height field */
   let W, H, field, _scrollOffset = 0;
 
-  function buildField(){
-    const STEP = 3; // sample every 3px for performance
+  function buildField(scrollOffset){
+    const STEP = 4; // sample every 4px — slightly coarser, ~44% fewer samples vs 3px
     const cols = Math.ceil(W/STEP)+1;
     const rows = Math.ceil(H/STEP)+1;
     field = { cols, rows, STEP, data: new Float32Array(cols*rows) };
@@ -78,13 +78,14 @@ const MEDIUM_USERNAME = 'mah3sec';
     ];
 
     const S = 0.0024; // base spatial scale
+    const so = (scrollOffset || 0) * 0.00015;
     for(let r=0;r<rows;r++){
       for(let c=0;c<cols;c++){
         const px = c*STEP, py = r*STEP;
         let h=0;
         for(const p of peaks){
           const nx = px*S*p.scale + p.ox;
-          const ny = py*S*p.scale + p.oy + _scrollOffset;
+          const ny = py*S*p.scale + p.oy + so;
           h += fbm(nx, ny, 5) * p.weight;
         }
         field.data[r*cols+c] = h;
@@ -147,28 +148,17 @@ const MEDIUM_USERNAME = 'mah3sec';
     ctx.stroke();
   }
 
-  function draw(scrollY){
-    canvas.width  = W = window.innerWidth;
-    canvas.height = H = window.innerHeight;
-    /* Fill bg — canvas IS the page background */
+  let _fieldMn = 0, _fieldMx = 1;
+
+  function drawField(){
     ctx.fillStyle = '#080916';
     ctx.fillRect(0, 0, W, H);
 
-    /* Shift noise origin by scroll so topo moves with page */
-    _scrollOffset = (scrollY || 0) * 0.00015;
-    buildField();
-
-    /* Find min/max of field for normalisation */
-    let mn=Infinity, mx=-Infinity;
-    for(const v of field.data){ if(v<mn) mn=v; if(v>mx) mx=v; }
-
-    const LEVELS = 22; /* number of contour lines — more = denser */
-    const lineOpacity = 0.07; /* very subtle, like the reference images */
-
+    const LEVELS = 18;
+    const lineOpacity = 0.07;
     for(let i=1;i<LEVELS;i++){
       const t   = i/LEVELS;
-      const lvl = mn + t*(mx-mn);
-      /* slightly thicker every 5th line — index contour */
+      const lvl = _fieldMn + t*(_fieldMx-_fieldMn);
       const isMajor = (i % 5 === 0);
       ctx.globalAlpha = isMajor ? lineOpacity * 1.6 : lineOpacity;
       ctx.lineWidth   = isMajor ? 1.1 : 0.75;
@@ -177,24 +167,46 @@ const MEDIUM_USERNAME = 'mah3sec';
     ctx.globalAlpha = 1;
   }
 
-  /* Draw once on load */
-  draw(0);
+  function rebuildAndDraw(scrollY){
+    buildField(scrollY || 0);
+    let mn=Infinity, mx=-Infinity;
+    for(const v of field.data){ if(v<mn) mn=v; if(v>mx) mx=v; }
+    _fieldMn = mn; _fieldMx = mx;
+    drawField();
+  }
 
-  /* Redraw on scroll (throttled with RAF) */
+  function initCanvas(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  /* Draw once on load */
+  initCanvas();
+  rebuildAndDraw(0);
+
+  /* On scroll: only redraw if scroll moved field meaningfully (every ~80px) */
+  let _lastScrollBuild = 0;
   let scrollRaf;
   window.addEventListener('scroll', () => {
     if(scrollRaf) return;
     scrollRaf = requestAnimationFrame(() => {
-      draw(window.scrollY);
+      const sy = window.scrollY;
+      if(Math.abs(sy - _lastScrollBuild) > 80){
+        _lastScrollBuild = sy;
+        rebuildAndDraw(sy);
+      }
       scrollRaf = null;
     });
   }, {passive:true});
 
-  /* Redraw on resize (debounced) */
+  /* Resize: debounced, full reinit */
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => draw(window.scrollY), 250);
+    resizeTimer = setTimeout(() => {
+      initCanvas();
+      rebuildAndDraw(window.scrollY);
+    }, 250);
   }, {passive:true});
 })();
 
@@ -225,30 +237,45 @@ const HOF = [
   {name:'Majid Al Futtaim',domain:'majidalfuttaim.com'},
 ];
 
-/* ── Progress bar + trail thread ── */
+/* ── Single RAF scroll loop: progress bar + trail + nav + active links ── */
 (function(){
-  const bar    = document.getElementById('progress');
-  const thread = document.getElementById('trail-thread');
-  const update = () => {
-    const t   = document.documentElement.scrollHeight - window.innerHeight;
-    const pct = t ? Math.min(window.scrollY / t, 1) : 0;
-    if(bar)    bar.style.transform = `scaleX(${pct})`;
-    if(thread) thread.style.setProperty('--trail-progress', `${pct * 100}%`);
-  };
-  window.addEventListener('scroll', update, {passive:true});
-  update();
-})();
+  const bar         = document.getElementById('progress');
+  const thread      = document.getElementById('trail-thread');
+  const nav         = document.getElementById('mainnav');
+  const toggle      = document.getElementById('navToggle');
+  const menu        = document.getElementById('navLinks');
+  const allSections = Array.from(document.querySelectorAll('section[id], header[id]'));
+  const navLinks    = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
 
-/* ── Nav: scroll glow + mobile toggle + active links ── */
-(function(){
-  const nav    = document.getElementById('mainnav');
-  const toggle = document.getElementById('navToggle');
-  const menu   = document.getElementById('navLinks');
-  if(!nav) return;
+  let rafPending = false;
 
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 60);
-  }, {passive:true});
+  function onScroll(){
+    if(rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      const sy  = window.scrollY;
+      const t   = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = t ? Math.min(sy / t, 1) : 0;
+
+      if(bar)    bar.style.transform = `scaleX(${pct})`;
+      if(thread) thread.style.setProperty('--trail-progress', `${pct * 100}%`);
+      if(nav)    nav.classList.toggle('scrolled', sy > 60);
+
+      const y = sy + 100;
+      let active = 'top';
+      for(let i = 0; i < allSections.length; i++){
+        if(allSections[i].offsetTop <= y) active = allSections[i].id;
+      }
+      for(let i = 0; i < navLinks.length; i++){
+        navLinks[i].classList.toggle('is-active', navLinks[i].getAttribute('href') === `#${active}`);
+      }
+
+      rafPending = false;
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
 
   if(toggle && menu){
     toggle.addEventListener('click', () => {
@@ -259,15 +286,6 @@ const HOF = [
       a.addEventListener('click', () => menu.classList.remove('open'))
     );
   }
-
-  const allSections = Array.from(document.querySelectorAll('section[id], header[id]'));
-  const navLinks    = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY + 100;
-    let active = 'top';
-    allSections.forEach(s => { if(s.offsetTop <= y) active = s.id });
-    navLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === `#${active}`));
-  }, {passive:true});
 })();
 
 /* ── Text scramble ── */
